@@ -1,0 +1,955 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>KlabSoft</title>
+<meta name="description" content="KlabSoft · KnowledgeLab Software. Soluciones de software para empresas: sistemas a medida, automatización de tareas y control de calidad.">
+
+<!-- Tipografías: display con carácter, cuerpo legible y monoespaciada para el código -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,700;12..96,800&family=Figtree:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+
+<!-- Tailwind (play CDN). Para producción ver README.md: se compila a un CSS estático. -->
+<script src="https://cdn.tailwindcss.com/3.4.17"></script>
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        // Mismos valores que las variables de :root (en hex para que funcionen las opacidades, ej. bg-teal/15)
+        colors: {
+          fondo: '#0a1216',
+          panel: '#0f1b20',
+          panel2: '#142429',
+          linea: '#1f3238',
+          texto: '#e6f0f0',
+          suave: '#93a9ac',
+          teal: '#2bb3a8',
+          cian: '#5fd4e8',
+          indigo: '#7c83f2',
+          coral: '#f0805c',
+          ok: '#4fd18b',
+        },
+        fontFamily: {
+          display: ['"Bricolage Grotesque"', 'Segoe UI', 'system-ui', 'sans-serif'],
+          sans: ['Figtree', 'Segoe UI', 'system-ui', 'sans-serif'],
+          mono: ['"JetBrains Mono"', 'Consolas', 'ui-monospace', 'monospace'],
+        },
+      },
+    },
+  };
+</script>
+
+<style>
+  /* Concepto: "laboratorio nocturno". Fondo petróleo oscuro, el teal del logo como
+     acento principal, un glow índigo de apoyo y el coral del logo solo para detalles.
+     Layout: hero en dos columnas (mensaje + consola de pruebas), secciones en grilla. */
+  :root {
+    --fondo: #0a1216;     /* petróleo casi negro, con tinte del teal */
+    --panel: #0f1b20;
+    --panel-2: #142429;
+    --linea: #1f3238;
+    --texto: #e6f0f0;
+    --suave: #93a9ac;
+    --teal: #2bb3a8;      /* teal del logo, aclarado para fondo oscuro */
+    --cian: #5fd4e8;
+    --indigo: #7c83f2;
+    --coral: #f0805c;     /* cabeza del logo */
+    --ok: #4fd18b;
+    color-scheme: dark;
+  }
+  html { scroll-behavior: smooth; }
+  body { background: var(--fondo); color: var(--texto); }
+  h1, h2, h3 { text-wrap: balance; }
+  section[id] { scroll-margin-top: 5rem; }
+
+  /* Cabecera fija que respeta el notch del teléfono */
+  .cabecera { top: env(safe-area-inset-top, 0px); }
+
+  /* Fondo del hero: grilla técnica muy tenue + dos glows */
+  .grilla {
+    background-image:
+      linear-gradient(to right, color-mix(in srgb, var(--linea) 55%, transparent) 1px, transparent 1px),
+      linear-gradient(to bottom, color-mix(in srgb, var(--linea) 55%, transparent) 1px, transparent 1px);
+    background-size: 44px 44px;
+    mask-image: radial-gradient(ellipse at 50% 30%, #000 30%, transparent 75%);
+  }
+  .glow-teal { background: radial-gradient(circle, color-mix(in srgb, var(--teal) 30%, transparent), transparent 65%); }
+  .glow-indigo { background: radial-gradient(circle, color-mix(in srgb, var(--indigo) 26%, transparent), transparent 65%); }
+
+  .texto-degrade {
+    background: linear-gradient(100deg, var(--teal), var(--cian) 55%, var(--indigo));
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+  }
+
+  /* Consola de pruebas del hero */
+  .consola .linea-log { animation: aparecer .45s ease both; animation-delay: calc(var(--i) * 260ms); }
+  @keyframes aparecer { from { opacity: .15; transform: translateY(3px); } to { opacity: 1; transform: none; } }
+  .cursor::after { content: '▍'; color: var(--teal); animation: titila 1s steps(1) infinite; }
+  @keyframes titila { 50% { opacity: 0; } }
+  .barra-progreso { transition: width .5s ease; }
+
+  /* Tarjetas de servicio */
+  .servicio { transition: transform .25s ease, border-color .25s ease, background-color .25s ease; }
+  .servicio:hover { transform: translateY(-4px); border-color: color-mix(in srgb, var(--teal) 55%, var(--linea)); }
+  .servicio[data-abierto="true"] { border-color: var(--teal); background: var(--panel-2); }
+  .servicio .chevron { transition: transform .25s ease; }
+  .servicio[data-abierto="true"] .chevron { transform: rotate(180deg); }
+
+  /* Preguntas frecuentes */
+  details summary::-webkit-details-marker { display: none; }
+  details[open] .signo { transform: rotate(45deg); }
+  .signo { transition: transform .2s ease; }
+
+  /* Foco visible en todo lo interactivo */
+  a:focus-visible, button:focus-visible, summary:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible {
+    outline: 2px solid var(--cian); outline-offset: 3px; border-radius: 6px;
+  }
+  .campo { background: var(--fondo); border: 1px solid var(--linea); color: var(--texto); }
+  .campo:focus { border-color: var(--teal); outline: none; box-shadow: 0 0 0 3px color-mix(in srgb, var(--teal) 25%, transparent); }
+  .campo[aria-invalid="true"] { border-color: var(--coral); }
+  .campo option { background: var(--panel); }
+
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    *, *::before, *::after { animation: none !important; transition: none !important; }
+  }
+</style>
+</head>
+<body class="font-sans antialiased">
+
+<!-- ============ HEADER / NAVBAR ============ -->
+<header class="cabecera sticky z-50 border-b border-linea/70 bg-fondo/85 backdrop-blur">
+  <nav class="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3 sm:px-6" aria-label="Principal">
+    <a href="#inicio" class="flex items-center gap-2.5" aria-label="KlabSoft, ir al inicio">
+      <!-- Isotipo del logo redibujado en SVG -->
+      <svg viewBox="0 0 100 80" class="h-8 w-10" aria-hidden="true">
+        <circle cx="50" cy="15" r="12" fill="var(--coral)"/>
+        <path d="M30 30 C14 36 8 54 16 72 L30 66 C25 55 27 43 37 37 Z" fill="var(--teal)"/>
+        <path d="M70 30 C86 36 92 54 84 72 L70 66 C75 55 73 43 63 37 Z" fill="var(--teal)"/>
+        <path d="M27 78 C29 52 71 52 73 78 Z" fill="var(--teal)"/>
+      </svg>
+      <span class="font-display text-xl leading-none tracking-tight"><b class="font-extrabold">Klab</b><span class="font-normal">Soft</span></span>
+    </a>
+
+    <ul class="hidden items-center gap-7 text-sm text-suave md:flex">
+      <li><a href="#soluciones" class="enlace-nav transition hover:text-texto">Soluciones</a></li>
+      <li><a href="#servicios" class="enlace-nav transition hover:text-texto">Servicios</a></li>
+      <li><a href="#nosotros" class="enlace-nav transition hover:text-texto">Sobre nosotros</a></li>
+      <li><a href="#por-que" class="enlace-nav transition hover:text-texto">Por qué elegirnos</a></li>
+      <li><a href="#contacto" class="enlace-nav transition hover:text-texto">Contacto</a></li>
+    </ul>
+
+    <div class="flex items-center gap-2">
+      <a href="#contacto" class="hidden rounded-full bg-teal px-4 py-2 text-sm font-semibold text-fondo transition hover:bg-cian sm:inline-block">Agendar consulta</a>
+      <button id="boton-menu" type="button" class="rounded-lg border border-linea p-2 text-texto md:hidden" aria-expanded="false" aria-controls="menu-movil" aria-label="Abrir menú">
+        <svg viewBox="0 0 24 24" class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+      </button>
+    </div>
+  </nav>
+
+  <!-- Menú móvil -->
+  <div id="menu-movil" class="border-t border-linea px-4 pb-4 md:hidden" hidden>
+    <ul class="flex flex-col gap-1 pt-2 text-base">
+      <li><a href="#soluciones" class="block rounded-lg px-3 py-2.5 hover:bg-panel">Soluciones</a></li>
+      <li><a href="#servicios" class="block rounded-lg px-3 py-2.5 hover:bg-panel">Servicios</a></li>
+      <li><a href="#nosotros" class="block rounded-lg px-3 py-2.5 hover:bg-panel">Sobre nosotros</a></li>
+      <li><a href="#por-que" class="block rounded-lg px-3 py-2.5 hover:bg-panel">Por qué elegirnos</a></li>
+      <li><a href="#contacto" class="block rounded-lg px-3 py-2.5 hover:bg-panel">Contacto</a></li>
+      <li><a href="#contacto" class="mt-2 block rounded-full bg-teal px-4 py-3 text-center font-semibold text-fondo">Solicitar cotización</a></li>
+    </ul>
+  </div>
+</header>
+
+<main>
+
+<!-- ============ HERO ============ -->
+<section id="inicio" class="relative overflow-hidden">
+  <div class="grilla pointer-events-none absolute inset-0" aria-hidden="true"></div>
+  <div class="glow-teal pointer-events-none absolute -left-40 -top-40 h-[34rem] w-[34rem]" aria-hidden="true"></div>
+  <div class="glow-indigo pointer-events-none absolute -right-40 top-20 h-[30rem] w-[30rem]" aria-hidden="true"></div>
+
+  <div class="relative mx-auto grid max-w-6xl items-center gap-12 px-4 pb-20 pt-14 sm:px-6 lg:grid-cols-[1.05fr_1fr] lg:pt-20">
+    <div class="min-w-0">
+      <p class="mb-5 inline-flex items-center gap-2 rounded-full border border-linea bg-panel/70 px-3 py-1 text-sm text-suave">
+        <span class="h-2 w-2 rounded-full bg-ok" aria-hidden="true"></span>
+        Soluciones de software para empresas
+      </p>
+      <h1 class="font-display text-4xl font-extrabold leading-[1.05] tracking-tight sm:text-5xl lg:text-6xl">
+        Transformamos procesos complejos en <span class="texto-degrade">software ágil, robusto y garantizado.</span>
+      </h1>
+      <p class="mt-6 max-w-xl text-lg leading-relaxed text-suave">
+        Diseñamos y desarrollamos plataformas web, sistemas de gestión y automatizaciones a medida, para que tu empresa trabaje más rápido, con menos tareas manuales y con información siempre al día.
+      </p>
+      <div class="mt-8 flex flex-wrap gap-3">
+        <a href="#contacto" class="rounded-full bg-teal px-6 py-3 font-semibold text-fondo shadow-[0_0_30px_-6px_var(--teal)] transition hover:bg-cian">Agendar consulta gratuita</a>
+        <a href="#soluciones" class="rounded-full border border-linea px-6 py-3 font-semibold text-texto transition hover:border-teal">Ver soluciones</a>
+      </div>
+      <ul class="mt-10 grid max-w-xl gap-3 border-t border-linea pt-6 text-sm sm:grid-cols-3">
+        <li class="flex items-start gap-2"><span class="mt-0.5 text-teal" aria-hidden="true">✓</span>Soluciones a medida de cada empresa</li>
+        <li class="flex items-start gap-2"><span class="mt-0.5 text-teal" aria-hidden="true">✓</span>Entregas en iteraciones cortas</li>
+        <li class="flex items-start gap-2"><span class="mt-0.5 text-teal" aria-hidden="true">✓</span>Automatización e integración de procesos</li>
+      </ul>
+    </div>
+
+    <!-- Panel de proyecto con pestañas: cada solución muestra sus indicadores y su proceso.
+         Los datos son ilustrativos y se cargan desde el objeto PANEL en el script. -->
+    <div id="panel" class="min-w-0 rounded-2xl border border-linea bg-panel/90 shadow-2xl shadow-black/40 backdrop-blur">
+      <div class="flex flex-wrap items-center justify-between gap-2 border-b border-linea px-5 py-4">
+        <div>
+          <p class="text-xs text-suave">Panel del proyecto</p>
+          <p id="panel-titulo" class="font-display text-lg font-bold">Plataforma web</p>
+        </div>
+        <span class="inline-flex items-center gap-1.5 rounded-full bg-ok/10 px-2.5 py-1 text-[11px] text-ok">
+          <span class="h-1.5 w-1.5 animate-pulse rounded-full bg-ok" aria-hidden="true"></span>Demo en vivo
+        </span>
+      </div>
+
+      <div class="flex gap-1 border-b border-linea p-2" role="tablist" aria-label="Soluciones">
+        <button type="button" role="tab" class="pestana-panel flex-1 rounded-lg px-2 py-2 text-xs font-semibold transition sm:text-sm" data-clave="web" aria-selected="true">Plataformas Web</button>
+        <button type="button" role="tab" class="pestana-panel flex-1 rounded-lg px-2 py-2 text-xs font-semibold transition sm:text-sm" data-clave="auto" aria-selected="false">Automatizaciones</button>
+        <button type="button" role="tab" class="pestana-panel flex-1 rounded-lg px-2 py-2 text-xs font-semibold transition sm:text-sm" data-clave="gestion" aria-selected="false">Sistemas de gestión</button>
+      </div>
+
+      <div role="tabpanel" aria-live="polite">
+        <!-- Indicadores -->
+        <ul id="panel-indicadores" class="grid grid-cols-2 gap-px bg-linea"></ul>
+        <!-- Proceso -->
+        <div class="px-5 py-4">
+          <p class="mb-3 text-xs uppercase tracking-[0.14em] text-suave">Proceso</p>
+          <ol id="panel-pasos" class="flex flex-wrap items-center gap-x-2 gap-y-2 text-xs"></ol>
+        </div>
+      </div>
+
+      <div class="border-t border-linea px-5 py-4">
+        <div class="mb-2 flex justify-between text-xs text-suave"><span id="panel-barra-texto">Avance del proyecto</span><span id="panel-barra-valor">90%</span></div>
+        <div class="h-2 overflow-hidden rounded-full bg-linea"><div id="panel-barra" class="h-full rounded-full bg-gradient-to-r from-teal to-cian transition-[width] duration-700" style="width:100%"></div></div>
+        <p class="mt-3 text-[11px] text-suave/80">Datos de ejemplo con fines ilustrativos.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ RUBROS ============ -->
+<section aria-label="Rubros con los que trabajamos" class="border-y border-linea bg-panel/50">
+  <div class="mx-auto flex max-w-6xl flex-wrap items-center justify-center gap-x-8 gap-y-3 px-4 py-6 text-sm text-suave sm:px-6">
+    <span class="text-xs font-semibold uppercase tracking-[0.18em] text-teal">Para</span>
+    <span>Pymes</span><span>Comercios</span><span>Logística y comercio exterior</span><span>Estudios profesionales</span><span>Instituciones educativas</span><span>Servicios</span>
+  </div>
+</section>
+
+<!-- ============ SOLUCIONES: problemas que resolvemos ============ -->
+<section id="soluciones" class="mx-auto max-w-6xl px-4 pt-24 sm:px-6">
+  <div class="max-w-2xl">
+    <p class="text-xs font-semibold uppercase tracking-[0.18em] text-teal">Soluciones</p>
+    <h2 class="mt-3 font-display text-3xl font-bold tracking-tight sm:text-4xl">¿Te suena alguna de estas situaciones?</h2>
+    <p class="mt-4 text-suave">Son los problemas que más vemos en las empresas. Así los resolvemos.</p>
+  </div>
+  <div class="mt-10 grid gap-5 sm:grid-cols-2">
+    <div class="rounded-2xl border border-linea bg-panel p-6">
+      <p class="text-suave">“Tenemos todo en planillas de Excel y nunca sabemos cuál es la última versión.”</p>
+      <p class="mt-4 border-t border-linea pt-4"><span class="font-semibold text-teal">Solución:</span> un sistema propio donde toda la información está en un solo lugar y al día.</p>
+    </div>
+    <div class="rounded-2xl border border-linea bg-panel p-6">
+      <p class="text-suave">“Avisamos a cada cliente a mano, por WhatsApp o mail, y a veces nos olvidamos.”</p>
+      <p class="mt-4 border-t border-linea pt-4"><span class="font-semibold text-teal">Solución:</span> avisos automáticos cada vez que algo cambia, sin que nadie tenga que acordarse.</p>
+    </div>
+    <div class="rounded-2xl border border-linea bg-panel p-6">
+      <p class="text-suave">“Nuestros clientes nos llaman todo el día para preguntar cómo va su pedido.”</p>
+      <p class="mt-4 border-t border-linea pt-4"><span class="font-semibold text-teal">Solución:</span> un portal donde cada cliente entra y consulta su estado cuando quiere.</p>
+    </div>
+    <div class="rounded-2xl border border-linea bg-panel p-6">
+      <p class="text-suave">“Ya tenemos un sistema, pero falla seguido y nadie sabe por qué.”</p>
+      <p class="mt-4 border-t border-linea pt-4"><span class="font-semibold text-teal">Solución:</span> lo revisamos a fondo, encontramos los errores y te decimos cómo corregirlos.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============ SERVICIOS ============ -->
+<!-- 6 capacidades en grilla 3x2 (2 columnas en tablet, 1 en celular).
+     Cada tarjeta: badge de enfoque, ícono, título, descripción y desplegable
+     "Qué incluye y tecnologías" (lo maneja .alternar-servicio en el script). -->
+<section id="servicios" class="mx-auto max-w-6xl px-4 py-24 sm:px-6">
+  <div class="grid gap-6 lg:grid-cols-[1.1fr_0.9fr] lg:items-end">
+    <div class="max-w-2xl">
+      <p class="text-xs font-semibold uppercase tracking-[0.18em] text-teal">Servicios</p>
+      <h2 class="mt-3 font-display text-3xl font-bold tracking-tight sm:text-4xl">Soluciones end-to-end para potenciar tu infraestructura digital</h2>
+    </div>
+    <p class="text-suave lg:pb-1">Acompañamos a empresas en cada etapa de su transformación digital: desde la concepción de la arquitectura hasta la optimización continua y el aseguramiento de calidad.</p>
+  </div>
+
+  <div class="mt-12 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+
+    <!-- 1. Desarrollo Web & Software Cloud -->
+    <article class="servicio flex flex-col rounded-2xl border border-linea bg-panel p-6" data-abierto="false">
+      <div class="flex items-start justify-between gap-3">
+        <div class="flex h-11 w-11 items-center justify-center rounded-xl bg-teal/15 text-teal" aria-hidden="true">
+          <svg viewBox="0 0 24 24" class="h-6 w-6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m8 8-4 4 4 4M16 8l4 4-4 4M13.5 5l-3 14"/></svg>
+        </div>
+        <span class="rounded-full border border-teal/40 px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wider text-teal">Ingeniería</span>
+      </div>
+      <h3 class="mt-5 font-display text-xl font-bold">Desarrollo Web &amp; Software Cloud</h3>
+      <p class="mt-2 flex-1 text-sm leading-relaxed text-suave">Sistemas web escalables, portales corporativos y plataformas en la nube, con arquitecturas modulares e integraciones frontend y backend de alto rendimiento.</p>
+      <button type="button" class="alternar-servicio mt-5 flex items-center gap-2 text-sm font-semibold text-teal" aria-expanded="false" aria-controls="detalle-web">
+        Qué incluye y tecnologías
+        <svg class="chevron h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+      </button>
+      <div id="detalle-web" class="mt-4 border-t border-linea pt-4" hidden>
+        <ul class="space-y-2 text-sm text-suave">
+          <li class="flex gap-2"><span class="text-teal">→</span>Arquitectura de software y microservicios</li>
+          <li class="flex gap-2"><span class="text-teal">→</span>Portales corporativos y de clientes</li>
+          <li class="flex gap-2"><span class="text-teal">→</span>Interfaces responsive con foco en UX</li>
+          <li class="flex gap-2"><span class="text-teal">→</span>Despliegue en la nube y escalabilidad</li>
+        </ul>
+        <div class="mt-4 flex flex-wrap gap-1.5 font-mono text-[11px] text-suave">
+          <span class="rounded-md bg-panel2 px-2 py-1">React</span><span class="rounded-md bg-panel2 px-2 py-1">Node.js</span><span class="rounded-md bg-panel2 px-2 py-1">PHP</span><span class="rounded-md bg-panel2 px-2 py-1">MySQL</span><span class="rounded-md bg-panel2 px-2 py-1">AWS</span>
+        </div>
+      </div>
+    </article>
+
+    <!-- 2. Automatización & Integración de Procesos (RPA) -->
+    <article class="servicio flex flex-col rounded-2xl border border-linea bg-panel p-6" data-abierto="false">
+      <div class="flex items-start justify-between gap-3">
+        <div class="flex h-11 w-11 items-center justify-center rounded-xl bg-indigo/15 text-indigo" aria-hidden="true">
+          <svg viewBox="0 0 24 24" class="h-6 w-6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12a8 8 0 0 1 13.7-5.7L20 8.5M20 4v4.5h-4.5M20 12a8 8 0 0 1-13.7 5.7L4 15.5M4 20v-4.5h4.5"/></svg>
+        </div>
+        <span class="rounded-full border border-indigo/40 px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wider text-indigo">Eficiencia</span>
+      </div>
+      <h3 class="mt-5 font-display text-xl font-bold">Automatización &amp; Integración de Procesos (RPA)</h3>
+      <p class="mt-2 flex-1 text-sm leading-relaxed text-suave">Conectamos tus sistemas mediante APIs, automatizamos flujos de trabajo y eliminamos tareas repetitivas con datos sincronizados en tiempo real.</p>
+      <button type="button" class="alternar-servicio mt-5 flex items-center gap-2 text-sm font-semibold text-indigo" aria-expanded="false" aria-controls="detalle-auto">
+        Qué incluye y tecnologías
+        <svg class="chevron h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+      </button>
+      <div id="detalle-auto" class="mt-4 border-t border-linea pt-4" hidden>
+        <ul class="space-y-2 text-sm text-suave">
+          <li class="flex gap-2"><span class="text-indigo">→</span>Relevamiento y rediseño de procesos</li>
+          <li class="flex gap-2"><span class="text-indigo">→</span>Integración entre sistemas vía APIs</li>
+          <li class="flex gap-2"><span class="text-indigo">→</span>Flujos automáticos, avisos y reportes</li>
+          <li class="flex gap-2"><span class="text-indigo">→</span>Migración de planillas a bases de datos</li>
+        </ul>
+        <div class="mt-4 flex flex-wrap gap-1.5 font-mono text-[11px] text-suave">
+          <span class="rounded-md bg-panel2 px-2 py-1">REST APIs</span><span class="rounded-md bg-panel2 px-2 py-1">Webhooks</span><span class="rounded-md bg-panel2 px-2 py-1">Cron jobs</span><span class="rounded-md bg-panel2 px-2 py-1">SMTP</span><span class="rounded-md bg-panel2 px-2 py-1">Excel / CSV</span>
+        </div>
+      </div>
+    </article>
+
+    <!-- 3. Sistemas de gestión a medida -->
+    <article class="servicio flex flex-col rounded-2xl border border-linea bg-panel p-6" data-abierto="false">
+      <div class="flex items-start justify-between gap-3">
+        <div class="flex h-11 w-11 items-center justify-center rounded-xl bg-cian/15 text-cian" aria-hidden="true">
+          <svg viewBox="0 0 24 24" class="h-6 w-6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18M9 9v11"/></svg>
+        </div>
+        <span class="rounded-full border border-cian/40 px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wider text-cian">Gestión</span>
+      </div>
+      <h3 class="mt-5 font-display text-xl font-bold">Sistemas de Gestión a Medida (ERP / CRM)</h3>
+      <p class="mt-2 flex-1 text-sm leading-relaxed text-suave">Plataformas internas que centralizan ventas, clientes, stock y operaciones en un solo lugar, con roles, reportes y tableros para tomar decisiones con datos.</p>
+      <button type="button" class="alternar-servicio mt-5 flex items-center gap-2 text-sm font-semibold text-cian" aria-expanded="false" aria-controls="detalle-gestion">
+        Qué incluye y tecnologías
+        <svg class="chevron h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+      </button>
+      <div id="detalle-gestion" class="mt-4 border-t border-linea pt-4" hidden>
+        <ul class="space-y-2 text-sm text-suave">
+          <li class="flex gap-2"><span class="text-cian">→</span>Módulos de ventas, clientes, stock y facturación</li>
+          <li class="flex gap-2"><span class="text-cian">→</span>Usuarios, roles y permisos por área</li>
+          <li class="flex gap-2"><span class="text-cian">→</span>Tableros e indicadores en tiempo real</li>
+          <li class="flex gap-2"><span class="text-cian">→</span>Portal de autogestión para tus clientes</li>
+        </ul>
+        <div class="mt-4 flex flex-wrap gap-1.5 font-mono text-[11px] text-suave">
+          <span class="rounded-md bg-panel2 px-2 py-1">PHP</span><span class="rounded-md bg-panel2 px-2 py-1">Node.js</span><span class="rounded-md bg-panel2 px-2 py-1">MySQL</span><span class="rounded-md bg-panel2 px-2 py-1">Reportes PDF / Excel</span>
+        </div>
+      </div>
+    </article>
+
+    <!-- 4. Diseño UX/UI -->
+    <article class="servicio flex flex-col rounded-2xl border border-linea bg-panel p-6" data-abierto="false">
+      <div class="flex items-start justify-between gap-3">
+        <div class="flex h-11 w-11 items-center justify-center rounded-xl bg-coral/15 text-coral" aria-hidden="true">
+          <svg viewBox="0 0 24 24" class="h-6 w-6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a9 9 0 1 0 0 18c1 0 1.5-.8 1.5-1.6 0-.9-.6-1.3-.6-2.1 0-.9.7-1.6 1.6-1.6H17a4 4 0 0 0 4-4C21 6.5 17 3 12 3Z"/><circle cx="7.5" cy="11" r="1"/><circle cx="10.5" cy="7.5" r="1"/><circle cx="15" cy="7.5" r="1"/></svg>
+        </div>
+        <span class="rounded-full border border-coral/40 px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wider text-coral">Experiencia</span>
+      </div>
+      <h3 class="mt-5 font-display text-xl font-bold">Diseño UX/UI &amp; Experiencia Digital</h3>
+      <p class="mt-2 flex-1 text-sm leading-relaxed text-suave">Interfaces claras y atractivas, pensadas para que tus clientes y tu equipo usen el sistema sin capacitación extensa y desde cualquier dispositivo.</p>
+      <button type="button" class="alternar-servicio mt-5 flex items-center gap-2 text-sm font-semibold text-coral" aria-expanded="false" aria-controls="detalle-ux">
+        Qué incluye y tecnologías
+        <svg class="chevron h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+      </button>
+      <div id="detalle-ux" class="mt-4 border-t border-linea pt-4" hidden>
+        <ul class="space-y-2 text-sm text-suave">
+          <li class="flex gap-2"><span class="text-coral">→</span>Investigación de usuarios y flujos de navegación</li>
+          <li class="flex gap-2"><span class="text-coral">→</span>Prototipos navegables antes de desarrollar</li>
+          <li class="flex gap-2"><span class="text-coral">→</span>Identidad visual aplicada a la plataforma</li>
+          <li class="flex gap-2"><span class="text-coral">→</span>Diseño responsive y accesible</li>
+        </ul>
+        <div class="mt-4 flex flex-wrap gap-1.5 font-mono text-[11px] text-suave">
+          <span class="rounded-md bg-panel2 px-2 py-1">Figma</span><span class="rounded-md bg-panel2 px-2 py-1">Prototipos</span><span class="rounded-md bg-panel2 px-2 py-1">Tailwind CSS</span><span class="rounded-md bg-panel2 px-2 py-1">Design systems</span>
+        </div>
+      </div>
+    </article>
+
+    <!-- 5. Calidad de software (QA & Testing) -->
+    <article class="servicio flex flex-col rounded-2xl border border-linea bg-panel p-6" data-abierto="false">
+      <div class="flex items-start justify-between gap-3">
+        <div class="flex h-11 w-11 items-center justify-center rounded-xl bg-ok/15 text-ok" aria-hidden="true">
+          <svg viewBox="0 0 24 24" class="h-6 w-6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 4.5 6v5.5c0 4.6 3.2 8.3 7.5 9.5 4.3-1.2 7.5-4.9 7.5-9.5V6L12 3Z"/><path d="m9 12 2 2 4-4"/></svg>
+        </div>
+        <span class="rounded-full border border-ok/40 px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wider text-ok">Calidad</span>
+      </div>
+      <h3 class="mt-5 font-display text-xl font-bold">Calidad de Software (QA &amp; Testing)</h3>
+      <p class="mt-2 flex-1 text-sm leading-relaxed text-suave">Pruebas manuales y automatizadas integradas a cada proyecto, para que lo que construimos llegue estable a tus usuarios.</p>
+      <button type="button" class="alternar-servicio mt-5 flex items-center gap-2 text-sm font-semibold text-ok" aria-expanded="false" aria-controls="detalle-qa">
+        Qué incluye y tecnologías
+        <svg class="chevron h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+      </button>
+      <div id="detalle-qa" class="mt-4 border-t border-linea pt-4" hidden>
+        <ul class="space-y-2 text-sm text-suave">
+          <li class="flex gap-2"><span class="text-ok">→</span>Pruebas funcionales y de regresión</li>
+          <li class="flex gap-2"><span class="text-ok">→</span>Pruebas automatizadas de pantallas y APIs</li>
+          <li class="flex gap-2"><span class="text-ok">→</span>Validación de datos y rendimiento</li>
+          <li class="flex gap-2"><span class="text-ok">→</span>También para sistemas que ya tenés</li>
+        </ul>
+        <div class="mt-4 flex flex-wrap gap-1.5 font-mono text-[11px] text-suave">
+          <span class="rounded-md bg-panel2 px-2 py-1">Selenium</span><span class="rounded-md bg-panel2 px-2 py-1">Postman</span><span class="rounded-md bg-panel2 px-2 py-1">SQL</span><span class="rounded-md bg-panel2 px-2 py-1">Jira</span>
+        </div>
+      </div>
+    </article>
+
+<!-- 6. Consultoría & Soporte Continuo -->
+    <article class="servicio flex flex-col rounded-2xl border border-linea bg-panel p-6" data-abierto="false">
+      <div class="flex items-start justify-between gap-3">
+        <div class="flex h-11 w-11 items-center justify-center rounded-xl bg-teal/15 text-teal" aria-hidden="true">
+          <svg viewBox="0 0 24 24" class="h-6 w-6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19V9M10 19V5M16 19v-7M22 19H2"/></svg>
+        </div>
+        <span class="rounded-full border border-teal/40 px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wider text-teal">Escalabilidad</span>
+      </div>
+      <h3 class="mt-5 font-display text-xl font-bold">Consultoría &amp; Soporte Continuo</h3>
+      <p class="mt-2 flex-1 text-sm leading-relaxed text-suave">Mantenimiento evolutivo, arquitectura de software a medida y acompañamiento técnico especializado para que tu equipo y tu plataforma crezcan juntos.</p>
+      <button type="button" class="alternar-servicio mt-5 flex items-center gap-2 text-sm font-semibold text-teal" aria-expanded="false" aria-controls="detalle-soporte">
+        Qué incluye y tecnologías
+        <svg class="chevron h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+      </button>
+      <div id="detalle-soporte" class="mt-4 border-t border-linea pt-4" hidden>
+        <ul class="space-y-2 text-sm text-suave">
+          <li class="flex gap-2"><span class="text-teal">→</span>Diagnóstico técnico y hoja de ruta</li>
+          <li class="flex gap-2"><span class="text-teal">→</span>Mantenimiento correctivo y evolutivo</li>
+          <li class="flex gap-2"><span class="text-teal">→</span>Capacitación y documentación para tu equipo</li>
+          <li class="flex gap-2"><span class="text-teal">→</span>Monitoreo y mejora continua</li>
+        </ul>
+        <div class="mt-4 flex flex-wrap gap-1.5 font-mono text-[11px] text-suave">
+          <span class="rounded-md bg-panel2 px-2 py-1">Git</span><span class="rounded-md bg-panel2 px-2 py-1">Scrum</span><span class="rounded-md bg-panel2 px-2 py-1">Documentación</span><span class="rounded-md bg-panel2 px-2 py-1">SLA de soporte</span>
+        </div>
+      </div>
+    </article>
+
+  </div>
+</section>
+
+<!-- ============ SOBRE NOSOTROS + PROCESO ============ -->
+<section id="nosotros" class="border-y border-linea bg-panel/40">
+  <div class="mx-auto grid max-w-6xl gap-12 px-4 py-24 sm:px-6 lg:grid-cols-[0.9fr_1.1fr]">
+    <div class="min-w-0">
+      <p class="text-xs font-semibold uppercase tracking-[0.18em] text-teal">Sobre nosotros</p>
+      <h2 class="mt-3 font-display text-3xl font-bold tracking-tight sm:text-4xl">Una empresa de soluciones de software cerca tuyo</h2>
+      <p class="mt-5 leading-relaxed text-suave">KlabSoft (KnowledgeLab Software) es un equipo que crea soluciones de software para empresas. Escuchamos qué necesitás, te lo explicamos sin vueltas y construimos una herramienta que tu equipo pueda usar desde el primer día.</p>
+      <p class="mt-4 leading-relaxed text-suave">Trabajamos con pymes y equipos que hoy resuelven todo con planillas, correo y WhatsApp, y necesitan un sistema que les ordene el trabajo.</p>
+    </div>
+
+    <!-- El proceso es una secuencia real, por eso va numerado -->
+    <ol class="relative min-w-0 space-y-6 border-l border-linea pl-8">
+      <li class="relative">
+        <span class="absolute -left-[2.6rem] flex h-7 w-7 items-center justify-center rounded-full border border-teal bg-fondo font-mono text-xs text-teal">1</span>
+        <h3 class="font-display text-lg font-bold">Te escuchamos</h3>
+        <p class="mt-1 text-sm text-suave">Nos contás cómo trabajan hoy y qué querés mejorar. La primera reunión no tiene costo.</p>
+      </li>
+      <li class="relative">
+        <span class="absolute -left-[2.6rem] flex h-7 w-7 items-center justify-center rounded-full border border-teal bg-fondo font-mono text-xs text-teal">2</span>
+        <h3 class="font-display text-lg font-bold">Te mostramos la propuesta</h3>
+        <p class="mt-1 text-sm text-suave">Ves cómo van a ser las pantallas, cuánto cuesta y cuánto tarda, antes de empezar.</p>
+      </li>
+      <li class="relative">
+        <span class="absolute -left-[2.6rem] flex h-7 w-7 items-center justify-center rounded-full border border-teal bg-fondo font-mono text-xs text-teal">3</span>
+        <h3 class="font-display text-lg font-bold">Lo construimos por etapas</h3>
+        <p class="mt-1 text-sm text-suave">Cada dos semanas te mostramos un avance que podés probar y opinar.</p>
+      </li>
+      <li class="relative">
+        <span class="absolute -left-[2.6rem] flex h-7 w-7 items-center justify-center rounded-full border border-teal bg-fondo font-mono text-xs text-teal">4</span>
+        <h3 class="font-display text-lg font-bold">Lo revisamos a fondo</h3>
+        <p class="mt-1 text-sm text-suave">Probamos cada parte del sistema para que llegue a tus manos sin errores.</p>
+      </li>
+      <li class="relative">
+        <span class="absolute -left-[2.6rem] flex h-7 w-7 items-center justify-center rounded-full border border-coral bg-fondo font-mono text-xs text-coral">5</span>
+        <h3 class="font-display text-lg font-bold">Lo empezás a usar</h3>
+        <p class="mt-1 text-sm text-suave">Lo dejamos funcionando, capacitamos a tu equipo y seguimos acompañándote.</p>
+      </li>
+    </ol>
+  </div>
+</section>
+
+<!-- ============ POR QUÉ KLABSOFT ============ -->
+<!-- Izquierda: tres beneficios para el cliente. Derecha: panel de compromisos de servicio
+     (son objetivos y criterios de entrega, no métricas históricas). -->
+<section id="por-que" class="mx-auto max-w-6xl px-4 py-24 sm:px-6">
+  <div class="grid gap-12 lg:grid-cols-[0.95fr_1.05fr] lg:items-center">
+    <div class="min-w-0">
+      <p class="text-xs font-semibold uppercase tracking-[0.18em] text-teal">Por qué KlabSoft</p>
+      <h2 class="mt-3 font-display text-3xl font-bold tracking-tight sm:text-4xl">La calidad no es un detalle, es la base de cada desarrollo</h2>
+
+      <ul class="mt-10 space-y-7">
+        <li class="flex gap-4">
+          <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-teal/15 text-teal" aria-hidden="true">
+            <svg viewBox="0 0 24 24" class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 4.5 6v5.5c0 4.6 3.2 8.3 7.5 9.5 4.3-1.2 7.5-4.9 7.5-9.5V6L12 3Z"/><path d="m9 12 2 2 4-4"/></svg>
+          </span>
+          <div>
+            <h3 class="font-display text-lg font-bold">Garantía sin sorpresas</h3>
+            <p class="mt-1 text-sm leading-relaxed text-suave">Cada entregable pasa por un riguroso control de calidad antes de llegar a tus usuarios.</p>
+          </div>
+        </li>
+        <li class="flex gap-4">
+          <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-indigo/15 text-indigo" aria-hidden="true">
+            <svg viewBox="0 0 24 24" class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7 12 3l8 4-8 4-8-4Z"/><path d="m4 12 8 4 8-4M4 17l8 4 8-4"/></svg>
+          </span>
+          <div>
+            <h3 class="font-display text-lg font-bold">Código robusto y escalable</h3>
+            <p class="mt-1 text-sm leading-relaxed text-suave">Estructura limpia y documentada, lista para crecer al ritmo de tu negocio.</p>
+          </div>
+        </li>
+        <li class="flex gap-4">
+          <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-coral/15 text-coral" aria-hidden="true">
+            <svg viewBox="0 0 24 24" class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12h11M11 6l6 6-6 6"/><path d="M20 5v14"/></svg>
+          </span>
+          <div>
+            <h3 class="font-display text-lg font-bold">Procesos ágiles</h3>
+            <p class="mt-1 text-sm leading-relaxed text-suave">Avances constantes, entregas funcionales en iteraciones cortas y comunicación clara.</p>
+          </div>
+        </li>
+      </ul>
+    </div>
+
+    <!-- Dashboard de valor: compromisos de servicio -->
+    <div class="relative min-w-0">
+      <div class="glow-indigo pointer-events-none absolute -right-20 -top-16 h-72 w-72" aria-hidden="true"></div>
+      <div class="relative rounded-2xl border border-linea bg-panel/95 shadow-2xl shadow-black/40">
+        <div class="flex flex-wrap items-center justify-between gap-2 border-b border-linea px-6 py-4">
+          <div>
+            <p class="text-xs text-suave">Dashboard de valor</p>
+            <p class="font-display text-lg font-bold">Nuestros compromisos en cada proyecto</p>
+          </div>
+          <span class="inline-flex items-center gap-1.5 rounded-full bg-ok/10 px-2.5 py-1 text-[11px] text-ok"><span class="h-1.5 w-1.5 rounded-full bg-ok" aria-hidden="true"></span>Activo</span>
+        </div>
+
+        <div class="grid gap-px bg-linea sm:grid-cols-2">
+          <!-- Rendimiento -->
+          <div class="bg-panel p-6">
+            <div class="flex items-center gap-2 text-cian">
+              <svg viewBox="0 0 24 24" class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 3 5 14h6l-1 7 8-11h-6l1-7Z"/></svg>
+              <span class="text-xs font-semibold uppercase tracking-wider">Rendimiento</span>
+            </div>
+            <p class="mt-3 font-display text-4xl font-extrabold tabular-nums">99.8<span class="text-2xl text-suave">%</span></p>
+            <p class="mt-1 font-semibold">Disponibilidad objetivo</p>
+            <p class="mt-1 text-sm text-suave">Software optimizado para cargar rápido y estar siempre en línea.</p>
+            <div class="mt-4 h-1.5 overflow-hidden rounded-full bg-linea"><div class="h-full rounded-full bg-cian" style="width:99.8%"></div></div>
+          </div>
+
+          <!-- Calidad -->
+          <div class="bg-panel p-6">
+            <div class="flex items-center gap-2 text-ok">
+              <svg viewBox="0 0 24 24" class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3 4.5 6v5.5c0 4.6 3.2 8.3 7.5 9.5 4.3-1.2 7.5-4.9 7.5-9.5V6L12 3Z"/><path d="m9 12 2 2 4-4"/></svg>
+              <span class="text-xs font-semibold uppercase tracking-wider">Calidad</span>
+            </div>
+            <p class="mt-3 font-display text-4xl font-extrabold tabular-nums">0</p>
+            <p class="mt-1 font-semibold">Errores críticos al entregar</p>
+            <p class="mt-1 text-sm text-suave">Ninguna versión sale con errores críticos conocidos: se prueba antes de cada entrega.</p>
+          </div>
+
+          <!-- Automatización -->
+          <div class="bg-panel p-6">
+            <div class="flex items-center gap-2 text-indigo">
+              <svg viewBox="0 0 24 24" class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12a8 8 0 0 1 13.7-5.7L20 8.5M20 4v4.5h-4.5M20 12a8 8 0 0 1-13.7 5.7L4 15.5M4 20v-4.5h4.5"/></svg>
+              <span class="text-xs font-semibold uppercase tracking-wider">Automatización</span>
+            </div>
+            <p class="mt-3 font-display text-2xl font-extrabold">Continua</p>
+            <p class="mt-1 font-semibold">Integración y flujos conectados</p>
+            <p class="mt-1 text-sm text-suave">Tus sistemas intercambian datos solos, sin intervención manual.</p>
+          </div>
+
+          <!-- Visibilidad -->
+          <div class="bg-panel p-6">
+            <div class="flex items-center gap-2 text-coral">
+              <svg viewBox="0 0 24 24" class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19V9M10 19V5M16 19v-7M22 19H2"/></svg>
+              <span class="text-xs font-semibold uppercase tracking-wider">Visibilidad</span>
+            </div>
+            <p class="mt-3 font-display text-2xl font-extrabold">Total</p>
+            <p class="mt-1 font-semibold">Reporte en cada sprint</p>
+            <p class="mt-1 text-sm text-suave">Sabés en todo momento qué se hizo, qué sigue y cómo va la calidad.</p>
+          </div>
+        </div>
+
+        <p class="border-t border-linea px-6 py-3 text-xs text-suave">Objetivos y criterios de entrega que acordamos en cada proyecto.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ PREGUNTAS FRECUENTES ============ -->
+<section aria-labelledby="titulo-faq" class="border-y border-linea bg-panel/40">
+  <div class="mx-auto max-w-3xl px-4 py-24 sm:px-6">
+    <h2 id="titulo-faq" class="font-display text-3xl font-bold tracking-tight sm:text-4xl">Preguntas frecuentes</h2>
+    <div class="mt-8 divide-y divide-linea border-y border-linea">
+      <details class="group py-5">
+        <summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold">¿Cuánto tarda un proyecto?<span class="signo text-2xl leading-none text-teal" aria-hidden="true">+</span></summary>
+        <p class="mt-3 text-suave">Depende de lo que necesites. Una página web institucional lleva entre 2 y 4 semanas; un sistema de gestión se arma por etapas y cada dos semanas ves un avance. Después de la primera reunión te pasamos un cronograma.</p>
+      </details>
+      <details class="group py-5">
+        <summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold">¿Pueden revisar un sistema que ya tenemos?<span class="signo text-2xl leading-none text-teal" aria-hidden="true">+</span></summary>
+        <p class="mt-3 text-suave">Sí. Aunque no lo hayamos hecho nosotros, lo revisamos a fondo y te entregamos un informe claro con cada error encontrado y cómo solucionarlo.</p>
+      </details>
+      <details class="group py-5">
+        <summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold">¿Qué necesito para empezar?<span class="signo text-2xl leading-none text-teal" aria-hidden="true">+</span></summary>
+        <p class="mt-3 text-suave">Solo contarnos qué querés resolver. Si tenés planillas, documentos o un sistema actual, nos sirven para el relevamiento.</p>
+      </details>
+      <details class="group py-5">
+        <summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold">¿El sistema queda a nombre de mi empresa?<span class="signo text-2xl leading-none text-teal" aria-hidden="true">+</span></summary>
+        <p class="mt-3 text-suave">Sí. Al terminar te entregamos todo: el sistema, los manuales y los accesos.</p>
+      </details>
+    </div>
+  </div>
+</section>
+
+<!-- ============ CONTACTO ============ -->
+<section id="contacto" class="relative overflow-hidden">
+  <div class="glow-teal pointer-events-none absolute -bottom-40 -left-40 h-[30rem] w-[30rem]" aria-hidden="true"></div>
+  <div class="relative mx-auto grid max-w-6xl gap-12 px-4 py-24 sm:px-6 lg:grid-cols-[0.8fr_1.2fr]">
+    <div class="min-w-0">
+      <p class="font-mono text-xs uppercase tracking-[0.18em] text-teal">Contacto</p>
+      <h2 class="mt-3 font-display text-3xl font-bold tracking-tight sm:text-4xl">Contanos tu proyecto</h2>
+      <p class="mt-4 leading-relaxed text-suave">La primera consulta no tiene costo. Te respondemos en menos de 48 horas hábiles con los próximos pasos.</p>
+      <div class="mt-8 rounded-2xl border border-linea bg-panel p-5">
+        <p class="text-sm text-suave">También podés escribirnos directo por WhatsApp</p>
+        <div class="mt-2 flex flex-wrap items-center gap-3">
+          <span id="telefono" class="select-all font-mono text-base">+54 9 11 6564-1856</span>
+          <button id="copiar-telefono" type="button" class="rounded-md border border-linea px-2.5 py-1 text-xs text-suave transition hover:border-teal hover:text-texto">Copiar</button>
+        </div>
+        <a href="https://wa.me/5491165641856?text=Hola%20KlabSoft%2C%20quiero%20hacer%20una%20consulta." target="_blank" rel="noopener" class="mt-4 inline-flex items-center gap-2 rounded-full bg-[#25d366] px-4 py-2 text-sm font-semibold text-[#0a1216] transition hover:brightness-110">
+          <svg viewBox="0 0 24 24" class="h-4 w-4" fill="currentColor" aria-hidden="true"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2Zm0 18.2a8.2 8.2 0 0 1-4.2-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2Zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8-.2-.1-.4-.1-.6.1l-.8 1c-.1.2-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.3-.4.2-.4.7-1.3.1-.2 0-.3 0-.4l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5a1 1 0 0 0-.7.3 3 3 0 0 0-.9 2.2 5.2 5.2 0 0 0 1.1 2.7 11.8 11.8 0 0 0 4.5 4c1.7.7 2.3.8 3.2.6.5-.1 1.5-.6 1.7-1.2.2-.6.2-1.1.2-1.2-.1-.1-.3-.2-.5-.3Z"/></svg>
+          Escribinos por WhatsApp
+        </a>
+        <div class="mt-5 border-t border-linea pt-4">
+          <p class="text-sm text-suave">O por correo</p>
+          <div class="mt-1 flex flex-wrap items-center gap-3">
+            <a id="correo" href="mailto:comercial@klabsoftware.com" class="select-all font-mono text-base hover:text-teal">comercial@klabsoftware.com</a>
+            <button id="copiar-correo" type="button" class="rounded-md border border-linea px-2.5 py-1 text-xs text-suave transition hover:border-teal hover:text-texto">Copiar</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <form id="formulario" class="min-w-0 rounded-2xl border border-linea bg-panel p-6 sm:p-8" novalidate>
+      <div class="grid gap-5 sm:grid-cols-2">
+        <div>
+          <label for="nombre" class="mb-1.5 block text-sm font-medium">Nombre y apellido</label>
+          <input id="nombre" name="nombre" type="text" autocomplete="name" required class="campo w-full rounded-lg px-3.5 py-2.5">
+          <p class="error mt-1 text-xs text-coral" hidden>Ingresá tu nombre.</p>
+        </div>
+        <div>
+          <label for="email" class="mb-1.5 block text-sm font-medium">Correo electrónico</label>
+          <input id="email" name="email" type="email" autocomplete="email" required class="campo w-full rounded-lg px-3.5 py-2.5">
+          <p class="error mt-1 text-xs text-coral" hidden>Ingresá un correo válido, por ejemplo nombre@empresa.com.</p>
+        </div>
+        <div>
+          <label for="empresa" class="mb-1.5 block text-sm font-medium">Empresa <span class="text-suave">(opcional)</span></label>
+          <input id="empresa" name="empresa" type="text" autocomplete="organization" class="campo w-full rounded-lg px-3.5 py-2.5">
+        </div>
+        <div>
+          <label for="servicio" class="mb-1.5 block text-sm font-medium">Servicio</label>
+          <select id="servicio" name="servicio" required class="campo w-full rounded-lg px-3.5 py-2.5">
+            <option value="">Elegí una opción</option>
+            <option>Desarrollo web y software cloud</option>
+            <option>Automatización e integración de procesos</option>
+            <option>Sistemas de gestión a medida</option>
+            <option>Diseño UX/UI</option>
+            <option>Calidad de software (QA)</option>
+            <option>Consultoría y soporte continuo</option>
+            <option>Todavía no lo sé</option>
+          </select>
+          <p class="error mt-1 text-xs text-coral" hidden>Elegí un servicio.</p>
+        </div>
+        <fieldset class="sm:col-span-2">
+          <legend class="mb-2 text-sm font-medium">¿Cuándo querés empezar?</legend>
+          <div class="flex flex-wrap gap-2">
+            <label class="cursor-pointer"><input type="radio" name="plazo" value="Lo antes posible" class="peer sr-only" checked><span class="block rounded-full border border-linea px-4 py-2 text-sm text-suave transition peer-checked:border-teal peer-checked:bg-teal/15 peer-checked:text-texto">Lo antes posible</span></label>
+            <label class="cursor-pointer"><input type="radio" name="plazo" value="En 1 a 3 meses" class="peer sr-only"><span class="block rounded-full border border-linea px-4 py-2 text-sm text-suave transition peer-checked:border-teal peer-checked:bg-teal/15 peer-checked:text-texto">En 1 a 3 meses</span></label>
+            <label class="cursor-pointer"><input type="radio" name="plazo" value="Solo estoy averiguando" class="peer sr-only"><span class="block rounded-full border border-linea px-4 py-2 text-sm text-suave transition peer-checked:border-teal peer-checked:bg-teal/15 peer-checked:text-texto">Solo estoy averiguando</span></label>
+          </div>
+        </fieldset>
+        <div class="sm:col-span-2">
+          <label for="mensaje" class="mb-1.5 block text-sm font-medium">Contanos qué necesitás</label>
+          <textarea id="mensaje" name="mensaje" rows="5" required minlength="20" class="campo w-full resize-y rounded-lg px-3.5 py-2.5" placeholder="Ej.: hoy llevamos los pedidos en Excel y queremos un sistema con avisos automáticos a los clientes."></textarea>
+          <p class="error mt-1 text-xs text-coral" hidden>Escribí al menos 20 caracteres para que podamos entender tu proyecto.</p>
+        </div>
+      </div>
+      <button type="submit" class="mt-6 w-full rounded-full bg-teal px-6 py-3 font-semibold text-fondo transition hover:bg-cian sm:w-auto">Enviar consulta por WhatsApp</button>
+      <p class="mt-3 text-xs text-suave">Se abre WhatsApp con tu consulta ya escrita; solo tenés que tocar Enviar.</p>
+      <p id="estado-formulario" class="mt-4 text-sm" role="status" hidden></p>
+    </form>
+  </div>
+</section>
+
+</main>
+
+<!-- ============ FOOTER ============ -->
+<footer class="border-t border-linea bg-panel/60">
+  <div class="mx-auto grid max-w-6xl gap-10 px-4 py-12 sm:px-6 md:grid-cols-[1.4fr_1fr_1fr]">
+    <div>
+      <span class="font-display text-xl"><b class="font-extrabold">Klab</b>Soft</span>
+      <p class="mt-1 text-sm text-suave">KnowledgeLab Software</p>
+      <p class="mt-4 max-w-xs text-sm text-suave">Soluciones de software para empresas: plataformas web, sistemas de gestión, automatización y diseño digital.</p>
+    </div>
+    <nav aria-label="Enlaces rápidos">
+      <h2 class="font-mono text-xs uppercase tracking-[0.18em] text-teal">Enlaces</h2>
+      <ul class="mt-4 space-y-2 text-sm text-suave">
+        <li><a href="#soluciones" class="hover:text-texto">Soluciones</a></li>
+        <li><a href="#servicios" class="hover:text-texto">Servicios</a></li>
+        <li><a href="#nosotros" class="hover:text-texto">Sobre nosotros</a></li>
+        <li><a href="#por-que" class="hover:text-texto">Por qué elegirnos</a></li>
+        <li><a href="#contacto" class="hover:text-texto">Contacto</a></li>
+      </ul>
+    </nav>
+    <div>
+      <h2 class="font-mono text-xs uppercase tracking-[0.18em] text-teal">Redes</h2>
+      <ul class="mt-4 space-y-2 text-sm text-suave">
+        <!-- Reemplazar por los perfiles reales de KlabSoft -->
+        <li><a href="https://www.linkedin.com/" target="_blank" rel="noopener" class="hover:text-texto">LinkedIn</a></li>
+        <li><a href="https://github.com/" target="_blank" rel="noopener" class="hover:text-texto">GitHub</a></li>
+        <li><a href="https://www.instagram.com/" target="_blank" rel="noopener" class="hover:text-texto">Instagram</a></li>
+      </ul>
+    </div>
+  </div>
+  <div class="border-t border-linea">
+    <p class="mx-auto max-w-6xl px-4 py-5 text-xs text-suave sm:px-6">© <span id="anio">2026</span> KlabSoft · KnowledgeLab Software. Todos los derechos reservados.</p>
+  </div>
+</footer>
+
+<!-- Botón flotante de WhatsApp -->
+<a href="https://wa.me/5491165641856?text=Hola%20KlabSoft%2C%20quiero%20hacer%20una%20consulta." target="_blank" rel="noopener"
+   class="fixed right-4 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-[#25d366] text-[#0a1216] shadow-lg shadow-black/40 transition hover:scale-105 sm:right-6"
+   style="bottom: calc(1.25rem + env(safe-area-inset-bottom, 0px))" aria-label="Escribinos por WhatsApp">
+  <svg viewBox="0 0 24 24" class="h-7 w-7" fill="currentColor" aria-hidden="true"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2Zm0 18.2a8.2 8.2 0 0 1-4.2-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2Zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8-.2-.1-.4-.1-.6.1l-.8 1c-.1.2-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.3-.4.2-.4.7-1.3.1-.2 0-.3 0-.4l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5a1 1 0 0 0-.7.3 3 3 0 0 0-.9 2.2 5.2 5.2 0 0 0 1.1 2.7 11.8 11.8 0 0 0 4.5 4c1.7.7 2.3.8 3.2.6.5-.1 1.5-.6 1.7-1.2.2-.6.2-1.1.2-1.2-.1-.1-.3-.2-.5-.3Z"/></svg>
+</a>
+
+<script>
+/* =========================================================
+   KlabSoft · interactividad de la landing
+   ========================================================= */
+
+/* --- Menú móvil --- */
+const botonMenu = document.getElementById('boton-menu');
+const menuMovil = document.getElementById('menu-movil');
+botonMenu.addEventListener('click', () => {
+  const abierto = menuMovil.hidden;
+  menuMovil.hidden = !abierto;
+  botonMenu.setAttribute('aria-expanded', String(abierto));
+});
+menuMovil.querySelectorAll('a').forEach((a) => a.addEventListener('click', () => {
+  menuMovil.hidden = true;
+  botonMenu.setAttribute('aria-expanded', 'false');
+}));
+
+/* --- Link activo del navbar según la sección visible --- */
+const enlaces = [...document.querySelectorAll('.enlace-nav')];
+const observador = new IntersectionObserver((entradas) => {
+  entradas.forEach((e) => {
+    if (!e.isIntersecting) return;
+    enlaces.forEach((a) => a.classList.toggle('text-texto', a.getAttribute('href') === '#' + e.target.id));
+  });
+}, { rootMargin: '-45% 0px -50% 0px' });
+['soluciones', 'servicios', 'nosotros', 'por-que', 'contacto'].forEach((id) => observador.observe(document.getElementById(id)));
+
+/* --- Panel del hero: pestañas Plataformas Web / Automatizaciones / Sistemas de gestión ---
+   Cada pestaña define sus indicadores (4), su proceso (el paso actual es "actual")
+   y la barra inferior. Rota sola cada 6 s hasta que el usuario elige una pestaña. */
+const PANEL = {
+  web: {
+    titulo: 'Plataforma web',
+    indicadores: [
+      ['Módulos entregados', '9 de 10', 'ok'],
+      ['Integraciones', 'Pagos · correo · CRM', 'ok'],
+      ['Diseño responsive', 'Compu · tablet · celular', 'ok'],
+      ['Publicación', 'En curso', 'activo'],
+    ],
+    pasos: ['Relevamiento', 'Diseño', 'Desarrollo', 'Pruebas', 'Publicación'], actual: 4,
+    barra: ['Avance del proyecto', 90],
+  },
+  auto: {
+    titulo: 'Automatización de procesos',
+    indicadores: [
+      ['Flujos automatizados', '12 activos', 'ok'],
+      ['Integraciones', 'Excel · correo · CRM', 'ok'],
+      ['Avisos automáticos', 'Enviándose', 'activo'],
+      ['Horas ahorradas', '18 h por semana', 'ok'],
+    ],
+    pasos: ['Análisis', 'Diseño del flujo', 'Integración', 'Pruebas', 'Activación'], actual: 4,
+    barra: ['Tareas manuales reemplazadas', 85],
+  },
+  gestion: {
+    titulo: 'Sistema de gestión a medida',
+    indicadores: [
+      ['Módulos', 'Ventas · clientes · stock', 'ok'],
+      ['Usuarios con permisos', '35 activos', 'ok'],
+      ['Reportes automáticos', 'Diarios', 'activo'],
+      ['Acceso', 'Web y celular', 'ok'],
+    ],
+    pasos: ['Relevamiento', 'Diseño', 'Desarrollo', 'Capacitación', 'Puesta en marcha'], actual: 3,
+    barra: ['Avance del proyecto', 75],
+  },
+};
+
+const pestanasPanel = [...document.querySelectorAll('.pestana-panel')];
+let clavePanel = 'web';
+let rotacion = null;
+
+function mostrarPanel(clave) {
+  clavePanel = clave;
+  const d = PANEL[clave];
+  document.getElementById('panel-titulo').textContent = d.titulo;
+
+  pestanasPanel.forEach((b) => {
+    const activa = b.dataset.clave === clave;
+    b.setAttribute('aria-selected', String(activa));
+    b.classList.toggle('bg-teal/15', activa);
+    b.classList.toggle('text-texto', activa);
+    b.classList.toggle('text-suave', !activa);
+  });
+
+  document.getElementById('panel-indicadores').innerHTML = d.indicadores.map(([nombre, valor, estado]) => `
+    <li class="bg-panel px-5 py-4">
+      <p class="text-xs text-suave">${nombre}</p>
+      <p class="mt-1 flex items-center gap-2 font-semibold">
+        <span class="${estado === 'ok' ? 'bg-ok' : 'animate-pulse bg-cian'} h-2 w-2 shrink-0 rounded-full" aria-hidden="true"></span>${valor}
+      </p>
+    </li>`).join('');
+
+  document.getElementById('panel-pasos').innerHTML = d.pasos.map((paso, i) => {
+    const estilo = i < d.actual ? 'border-ok/40 text-ok' : i === d.actual ? 'border-teal bg-teal/15 text-texto' : 'border-linea text-suave';
+    const flecha = i < d.pasos.length - 1 ? '<span class="text-suave/60" aria-hidden="true">›</span>' : '';
+    return `<li class="flex items-center gap-2"><span class="rounded-full border px-2.5 py-1 ${estilo}">${i < d.actual ? '✓ ' : ''}${paso}</span>${flecha}</li>`;
+  }).join('');
+
+  const barra = document.getElementById('panel-barra');
+  document.getElementById('panel-barra-texto').textContent = d.barra[0];
+  document.getElementById('panel-barra-valor').textContent = d.barra[1] + '%';
+  barra.style.width = '0%';
+  requestAnimationFrame(() => requestAnimationFrame(() => { barra.style.width = d.barra[1] + '%'; }));
+}
+
+pestanasPanel.forEach((b) => b.addEventListener('click', () => {
+  clearInterval(rotacion);            // si el usuario elige, se deja de rotar
+  mostrarPanel(b.dataset.clave);
+}));
+
+mostrarPanel('web');
+if (!matchMedia('(prefers-reduced-motion: reduce)').matches) {
+  const orden = Object.keys(PANEL);
+  rotacion = setInterval(() => mostrarPanel(orden[(orden.indexOf(clavePanel) + 1) % orden.length]), 6000);
+}
+
+/* --- Tarjetas de servicio: mostrar / ocultar "Qué incluye" --- */
+document.querySelectorAll('.alternar-servicio').forEach((boton) => {
+  boton.addEventListener('click', () => {
+    const tarjeta = boton.closest('.servicio');
+    const detalle = document.getElementById(boton.getAttribute('aria-controls'));
+    const abrir = detalle.hidden;
+    detalle.hidden = !abrir;
+    boton.setAttribute('aria-expanded', String(abrir));
+    tarjeta.dataset.abierto = String(abrir);
+  });
+});
+
+/* --- Copiar teléfono y correo --- */
+[['copiar-telefono', 'telefono'], ['copiar-correo', 'correo']].forEach(([idBoton, idTexto]) => {
+  document.getElementById(idBoton).addEventListener('click', (e) => {
+    const elemento = document.getElementById(idTexto);
+    const boton = e.currentTarget;
+    navigator.clipboard.writeText(elemento.textContent.trim())
+      .then(() => { boton.textContent = 'Copiado'; setTimeout(() => (boton.textContent = 'Copiar'), 1800); })
+      .catch(() => { const r = document.createRange(); r.selectNodeContents(elemento); getSelection().removeAllRanges(); getSelection().addRange(r); });
+  });
+});
+
+/* --- Formulario de contacto ---
+   Las consultas llegan por WhatsApp al número de WHATSAPP (formato internacional, sin "+").
+   Si en el futuro se suma un servicio de envío (Formspree, PHP propio, etc.),
+   se carga su URL en FORM_ENDPOINT y el formulario lo usa en lugar de WhatsApp. */
+const WHATSAPP = '5491165641856';
+const FORM_ENDPOINT = '';
+const formulario = document.getElementById('formulario');
+const estado = document.getElementById('estado-formulario');
+
+function validarCampo(campo) {
+  let valido = campo.checkValidity();
+  if (campo.type === 'email') valido = valido && /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(campo.value.trim());
+  if (campo.required && !campo.value.trim()) valido = false;
+  campo.setAttribute('aria-invalid', String(!valido));
+  const error = campo.parentElement.querySelector('.error');
+  if (error) error.hidden = valido;
+  return valido;
+}
+formulario.querySelectorAll('[required]').forEach((c) => {
+  c.addEventListener('blur', () => validarCampo(c));
+  c.addEventListener('input', () => { if (c.getAttribute('aria-invalid') === 'true') validarCampo(c); });
+});
+
+formulario.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const campos = [...formulario.querySelectorAll('[required]')];
+  const validos = campos.map(validarCampo);
+  if (validos.includes(false)) {
+    campos[validos.indexOf(false)].focus();
+    return;
+  }
+  const datos = Object.fromEntries(new FormData(formulario));
+  estado.hidden = false;
+
+  if (!FORM_ENDPOINT) {
+    // Arma el mensaje y abre WhatsApp con el texto listo para enviar
+    const texto = [
+      `Hola KlabSoft, soy ${datos.nombre}${datos.empresa ? ' de ' + datos.empresa : ''}.`,
+      `Servicio: ${datos.servicio}`,
+      `¿Cuándo quiero empezar?: ${datos.plazo}`,
+      `Mi correo: ${datos.email}`,
+      '',
+      datos.mensaje,
+    ].join('\n');
+    const url = `https://wa.me/${WHATSAPP}?text=${encodeURIComponent(texto)}`;
+    const enlace = document.createElement('a');
+    enlace.href = url; enlace.target = '_blank'; enlace.rel = 'noopener';
+    enlace.click();
+
+    estado.className = 'mt-4 rounded-lg border border-[#25d366]/40 bg-[#25d366]/10 p-3 text-sm text-texto';
+    estado.innerHTML = `Abrimos WhatsApp con tu consulta, ${datos.nombre.split(' ')[0]}. Tocá <b>Enviar</b> en WhatsApp para mandarla. ` +
+      `Si no se abrió, <a href="${url}" target="_blank" rel="noopener" class="font-semibold text-[#25d366] underline">tocá acá</a>.`;
+    return;
+  }
+
+  const boton = formulario.querySelector('[type="submit"]');
+  boton.disabled = true; boton.textContent = 'Enviando…';
+  try {
+    const r = await fetch(FORM_ENDPOINT, { method: 'POST', headers: { 'Content-Type': 'application/json', Accept: 'application/json' }, body: JSON.stringify(datos) });
+    if (!r.ok) throw new Error(r.status);
+    formulario.reset();
+    estado.className = 'mt-4 rounded-lg border border-ok/40 bg-ok/10 p-3 text-sm text-ok';
+    estado.textContent = '¡Gracias! Recibimos tu consulta y te respondemos en menos de 48 horas hábiles.';
+  } catch {
+    estado.className = 'mt-4 rounded-lg border border-coral/40 bg-coral/10 p-3 text-sm text-coral';
+    estado.textContent = 'No pudimos enviar la consulta. Revisá tu conexión y probá de nuevo, o escribinos por WhatsApp al +54 9 11 6564-1856 o a comercial@klabsoftware.com.';
+  } finally {
+    boton.disabled = false; boton.textContent = 'Enviar consulta';
+  }
+});
+
+/* --- Año del footer --- */
+document.getElementById('anio').textContent = new Date().getFullYear();
+</script>
+</body>
+</html>
